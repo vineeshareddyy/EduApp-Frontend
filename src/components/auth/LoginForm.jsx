@@ -64,13 +64,13 @@ const keyframesStyle = document.getElementById('login-keyframes') || (() => {
 const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(false);
-
+  const [userRole, setUserRole] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -82,14 +82,20 @@ const LoginForm = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await login(formData.email, formData.password);
-      const userRole = response.data.user.role;
+      const response = await login(formData.email, formData.password,formData.userType);
+      const userRole = response?.data?.user?.role;
+      
+      if (!userRole) {
+        setError('Login failed. Unable to determine user role.');
+        return;
+      }
+
       switch (userRole) {
         case 'trainer':
           navigate('/trainer');
@@ -104,7 +110,17 @@ const LoginForm = () => {
           navigate('/');
       }
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      // User-friendly error messages
+      const msg = err?.message || '';
+      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credential') || msg.toLowerCase().includes('password')) {
+        setError('Invalid email or password. Please try again.');
+      } else if (msg.toLowerCase().includes('network') || msg.toLowerCase().includes('fetch')) {
+        setError('Unable to connect to the server. Please check your internet connection.');
+      } else if (msg.toLowerCase().includes('pending') || msg.toLowerCase().includes('approval')) {
+        setError('Your account is pending admin approval. Please contact your administrator.');
+      } else {
+        setError(msg || 'Login failed. Please check your credentials and try again.');
+      }
     } finally {
       setLoading(false);
     }

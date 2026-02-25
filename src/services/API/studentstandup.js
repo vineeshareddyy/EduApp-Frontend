@@ -154,7 +154,7 @@ class ProfessionalAudioProcessor {
 class EnhancedVoiceDetector {
   constructor() {
     this.isListening = false;
-    this.silenceThreshold = 0.04;
+    this.silenceThreshold = 0.025;
     this.silenceDelay = 2000;
     this.silenceDetectionDelay = 3000;
     this.naturalPauseThreshold = 800;
@@ -173,7 +173,7 @@ class EnhancedVoiceDetector {
     this.speechStarted = false;
     this.consecutiveSpeechFrames = 0;
     this.consecutiveSilenceFrames = 0;
-    this.minConsecutiveFrames = 5;
+    this.minConsecutiveFrames = 3;
     this.currentStatus = 'idle';
     this.lastStatusSent = null;
     this.lastSpeechTime = 0;
@@ -293,7 +293,9 @@ class EnhancedVoiceDetector {
         }
       }
     } else {
-      this.consecutiveSpeechFrames = 0;
+      if (this.consecutiveSpeechFrames > 0) {
+        this.consecutiveSpeechFrames = Math.max(0, this.consecutiveSpeechFrames - 1);  // ✅ Gradual decay
+      }
       this.consecutiveSilenceFrames++;
       
       if (this.speechStarted) {
@@ -1667,6 +1669,48 @@ class ProfessionalStandupAPIService {
     }
   }
 
+    async verifyFaceIdentity(studentCode, imageBase64) {
+    try {
+      console.log('🔐 Verifying face identity (lightweight) for student:', studentCode);
+      
+      // Try lightweight identity-only endpoint first
+      let response;
+      try {
+        response = await fetch(`${this.BASE_URL}/daily_standup/auth/verify-face-identity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_code: studentCode,
+            image_base64: imageBase64
+          })
+        });
+      } catch (fetchError) {
+        // If identity endpoint doesn't exist, fall back to strict
+        console.log('⚠️ Identity endpoint not available, falling back to strict verification');
+        return await this.verifyFace(studentCode, imageBase64);
+      }
+      
+      // If 404, fall back to strict endpoint
+      if (response.status === 404) {
+        console.log('⚠️ Identity endpoint not found, falling back to strict verification');
+        return await this.verifyFace(studentCode, imageBase64);
+      }
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Face identity verification failed');
+      }
+      
+      const result = await response.json();
+      console.log('🔐 Face identity result:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Face identity verification error:', error);
+      throw error;
+    }
+  }
+  
   // ==================== VOICE VERIFICATION ====================
 
   async startVerificationSession(sessionId, studentCode) {
@@ -1869,13 +1913,22 @@ class ProfessionalStandupAPIService {
 
   handleConnectionClose(event) {
     if (event.code !== 1000) {
-      console.error('❌ Connection closed unexpectedly:', event.code, event.reason);
-      this.cleanup();
-      if (this.onServerError) {
-        this.onServerError(`Connection closed: Code ${event.code}, Reason: ${event.reason}`);
-      }
+        console.error('❌ Connection closed unexpectedly:', event.code, event.reason);
+        this.cleanup();
+        if (this.onServerError) {
+            this.onServerError(`Connection closed: Code ${event.code}, Reason: ${event.reason}`);
+        }
     } else {
-      console.log('✅ Connection closed normally');
+        // NEW: Check if session was still active when server closed connection
+        if (this.conversationState !== 'complete' && !this.sessionEnding) {
+            console.warn('⚠️ WebSocket closed by server while session active');
+            this.cleanup();
+            if (this.onServerError) {
+                this.onServerError('Session was closed by the server. Another session may have started.');
+            }
+        } else {
+            console.log('✅ Connection closed normally');
+        }
     }
   }
 

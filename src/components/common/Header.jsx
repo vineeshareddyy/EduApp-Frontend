@@ -64,9 +64,11 @@ const Header = ({ title, onMenuToggle }) => {
         borderBottom: '1px solid rgba(255,255,255,0.10)',
         boxShadow: '0 2px 12px rgba(26,138,138,0.30)',
         animation: 'headerSlideDown 0.4s ease-out',
+       
       }}
     >
-      <Toolbar sx={{ minHeight: { xs: 68, sm: 76 }, px: { xs: 1.5, sm: 2.5 } }}>
+      <Toolbar sx={{ minHeight: { xs: 68, sm: 76 }, px: { xs: 1.5, sm: 2.5 },  display:"flex",
+        justifyContent:"space-between" }}>
         {/* ── Brand ── */}
         <Box display="flex" alignItems="center" gap={1} sx={{ cursor: 'pointer', '&:hover': { opacity: 0.85 }, minWidth: 'fit-content' }} onClick={() => navigate('/')}>
           {onMenuToggle && (
@@ -87,27 +89,7 @@ const Header = ({ title, onMenuToggle }) => {
           </Box>
         </Box>
 
-        {/* ── Center Search Bar ── */}
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', px: { xs: 1, sm: 3 } }}>
-          <Box sx={{
-            display: 'flex', alignItems: 'center', gap: 1,
-            bgcolor: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '10px', px: 1.8, py: 0.7, width: '100%', maxWidth: 420,
-            transition: 'all 0.25s ease',
-            '&:focus-within': { bgcolor: 'rgba(255,255,255,0.18)', borderColor: 'rgba(255,255,255,0.30)', boxShadow: '0 0 0 3px rgba(255,255,255,0.08)' },
-          }}>
-            <SearchOutlined sx={{ fontSize: 18, color: 'rgba(255,255,255,0.45)' }} />
-            <InputBase
-              placeholder="Quick search..."
-              sx={{
-                flex: 1, fontSize: '0.82rem', color: 'rgba(255,255,255,0.9)',
-                fontFamily: "'Segoe UI', 'Helvetica Neue', sans-serif",
-                '& ::placeholder': { color: 'rgba(255,255,255,0.40)', opacity: 1 },
-              }}
-            />
-          </Box>
-        </Box>
-
+       
         {/* ── Right Actions ── */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.3, sm: 1 } }}>
           <IconButton sx={{ color: 'rgba(255,255,255,0.55)', width: 36, height: 36, borderRadius: '9px', display: { xs: 'none', sm: 'flex' }, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.12)' } }}>

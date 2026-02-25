@@ -75,7 +75,7 @@ const T = {
 // ════════════════════════════════════════════════════════════
 // CONFIG
 // ════════════════════════════════════════════════════════════
-const API_BASE = 'http://192.128.48.201:8090';
+const API_BASE = 'http://192.128.48.201:8030';
 
 const SCRIPTS = {
   tf: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js',

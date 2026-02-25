@@ -220,9 +220,8 @@ const StudentRegisterForm = ({ embedded = false }) => {
   const [success, setSuccess] = useState('');
   const [mounted, setMounted] = useState(false);
 
-  // Basic Info
+  // Basic Info (Student_Code removed — Admin/Super_Admin assigns later)
   const [formData, setFormData] = useState({
-    Student_Code: '',
     First_Name: '',
     Last_Name: '',
     Email: '',
@@ -630,7 +629,7 @@ const StudentRegisterForm = ({ embedded = false }) => {
     setError('');
 
     if (step === 0) {
-      if (!formData.Student_Code?.trim()) { setError('Student Code is required'); return false; }
+      // Student_Code validation removed — Admin/Super_Admin assigns later
       if (!formData.First_Name?.trim()) { setError('First Name is required'); return false; }
       if (!formData.Last_Name?.trim()) { setError('Last Name is required'); return false; }
       if (!formData.Email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.Email)) { setError('Valid email is required'); return false; }
@@ -785,9 +784,8 @@ const StudentRegisterForm = ({ embedded = false }) => {
         Basic Information
       </div>
       <div style={st.stepDesc}>Fill in your personal and academic details</div>
-      {/* NO scrollArea wrapper — parent handles scroll */}
+      {/* Student_Code field removed — Admin/Super_Admin assigns later */}
       <div style={st.row}>
-        <GlassInput label="Student Code" name="Student_Code" value={formData.Student_Code} onChange={handleInputChange} required />
         <GlassInput label="Organization ID" name="Org_ID" type="number" value={formData.Org_ID} onChange={handleInputChange} required />
       </div>
       <div style={st.row}>
@@ -1002,7 +1000,7 @@ const StudentRegisterForm = ({ embedded = false }) => {
       <div style={st.reviewCard}>
         <div style={st.reviewCardTitle}>Personal Information</div>
         <div style={st.reviewGrid}>
-          <div><span style={st.reviewLabel}>Student Code</span><span style={st.reviewValue}>{formData.Student_Code}</span></div>
+          {/* Student_Code removed from review — Admin/Super_Admin assigns later */}
           <div><span style={st.reviewLabel}>Name</span><span style={st.reviewValue}>{formData.First_Name} {formData.Last_Name}</span></div>
           <div><span style={st.reviewLabel}>Email</span><span style={st.reviewValue}>{formData.Email}</span></div>
           <div><span style={st.reviewLabel}>Mobile</span><span style={st.reviewValue}>{formData.Mobile_Number}</span></div>

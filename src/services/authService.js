@@ -16,6 +16,10 @@ const authService = {
           Password: password
         })
       });
+      // In loginStudent, after getting the response:
+if (response.Entity_Type && response.Entity_Type !== 'student') {
+  throw new Error('Not a student account');
+}
 
       console.log('✅ Student Login successful:', response);
 
@@ -49,19 +53,20 @@ const authService = {
   },
 
   // ============================================================
-  // TRAINER LOGIN - Add your trainer login endpoint here
+  // TRAINER LOGIN - Fixed endpoint and response mapping
+  // Backend: POST /api/admin/org/trainer/login
+  // Expects: { Credential, Password }
+  // Returns: { Message, Entity_Type, Id, Name, Org_Id, Photo_upload, Session_Timeout }
   // ============================================================
   loginTrainer: async (credential, password) => {
     console.log('🔄 Trainer Login attempt for:', credential);
-    
     try {
-      // Replace with your actual trainer login endpoint
-      const response = await apiRequest('/api/trainer/login', {
+      const response = await apiRequest('/api/admin/org/trainer/login', {
         method: 'POST',
         body: JSON.stringify({
           Credential: credential,
           Password: password
-        })
+        }),
       });
 
       console.log('✅ Trainer Login successful:', response);
@@ -71,7 +76,7 @@ const authService = {
         name: response.Name,
         role: 'trainer',
         orgId: response.Org_Id,
-        photoUrl: response.Photo_URL
+        photoUrl: response.Photo_upload || null  // Backend returns Photo_upload, not Photo_URL
       };
 
       localStorage.setItem('token', `trainer_${response.Id}_${Date.now()}`);
@@ -91,14 +96,16 @@ const authService = {
   },
 
   // ============================================================
-  // MENTOR LOGIN - Add your mentor login endpoint here
+  // MENTOR LOGIN - Fixed endpoint and response mapping
+  // Backend: POST /api/admin/org/mentor/login
+  // Expects: { Credential, Password }
+  // Returns: { Message, Entity_Type, Id, Name, Org_Id, Photo_upload, Session_Timeout }
   // ============================================================
   loginMentor: async (credential, password) => {
     console.log('🔄 Mentor Login attempt for:', credential);
     
     try {
-      // Replace with your actual mentor login endpoint
-      const response = await apiRequest('/api/mentor/login', {
+      const response = await apiRequest('/api/admin/org/mentor/login', {
         method: 'POST',
         body: JSON.stringify({
           Credential: credential,
@@ -113,7 +120,7 @@ const authService = {
         name: response.Name,
         role: 'mentor',
         orgId: response.Org_Id,
-        photoUrl: response.Photo_URL
+        photoUrl: response.Photo_upload || null  // Backend returns Photo_upload, not Photo_URL
       };
 
       localStorage.setItem('token', `mentor_${response.Id}_${Date.now()}`);
@@ -150,22 +157,41 @@ const authService = {
     }
 
     // If no type specified, try student first (most common), then others
-    // You can adjust this logic based on your needs
-    try {
-      return await authService.loginStudent(email, password);
-    } catch (studentError) {
-      console.log('Not a student, trying trainer...'`${studentError}`);
-      try {
-        return await authService.loginTrainer(email, password);
-      } catch (trainerError) {
-        console.log('Not a trainer, trying mentor...'`${trainerError}`);
-        try {
-          return await authService.loginMentor(email, password);
-        } catch (mentorError) {
-          throw new Error('Invalid email or password'`${mentorError}`);
-        }
-      }
-    }
+   // NEW — 1 API call
+// In authService.js, inside the `login` method, replace everything after the "try student first" comment:
+
+// NEW — 1 API call
+const response = await apiRequest('/api/auth/login', {
+  method: 'POST',
+  body: JSON.stringify({ Credential: email, Password: password })
+});
+
+const role = (response.Entity_Type || '').toLowerCase();
+
+const userData = {
+  id: response.Id,
+  name: response.Name,
+  role: role,
+  orgId: response.Org_Id,
+  photoUrl: role === 'student' ? response.Photo_URL : (response.Photo_upload || null),
+  entityType: response.Entity_Type
+};
+
+localStorage.setItem('token', `${role}_${response.Id}_${Date.now()}`);
+localStorage.setItem('user', JSON.stringify(userData));
+
+if (role === 'student') {
+  localStorage.setItem('student_id', response.Id);
+}
+
+return {
+  success: true,
+  data: {
+    user: userData,
+    token: localStorage.getItem('token')
+  }
+};
+// Uses response.Entity_Type to set the role
   },
 
   // ============================================================
@@ -175,6 +201,7 @@ const authService = {
     console.log('🔄 Logout...');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('student_id');
     console.log('✅ Logout successful');
     return { success: true };
   },
@@ -234,8 +261,8 @@ const authService = {
         console.log('👤 Current user:', userData.name, '- Role:', userData.role);
         return userData;
       } catch (e) {
+        console.log('⚠️ Failed to parse user data:', e);
         return null;
-        // console.log('Error parsing user data from storage:', e);  
       }
     }
     return null;
@@ -258,4 +285,4 @@ const authService = {
   }
 };
 
-export default authService;
+export default authService; 
